@@ -49,11 +49,3 @@ If you find our work useful, please consider citing our paper:
     pages     = {15434-15443}
 }
 ```
-
-## License
-
-<<<<<<< HEAD
-This project is licensed under [fill in] - see the [LICENSE](LICENSE) file for details.
-=======
-This project is licensed under [fill in] - see the [LICENSE](LICENSE) file for details.
->>>>>>> 5def8e5f3acba5dcdaa200af6164066680e1bac3
