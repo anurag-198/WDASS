@@ -32,9 +32,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from config import cfg
 import numpy as np
-from torchvision.transforms.functional import pad
 from .contrast_loss import ContrastCELoss
 from .image_label import ImageLevelLoss
 def calc_pad_same(in_siz, out_siz, stride, ksize):
@@ -62,7 +60,6 @@ def conv2d_same(input, kernel, groups,bias=None,stride=1,padding=0,dilation=1):
     assert result.shape == input.shape
     return result
 
-
 def gradient_central_diff(input, cuda):
     #return input, input
     kernel = [[1, 0, -1]]
@@ -79,7 +76,6 @@ def gradient_central_diff(input, cuda):
     y = conv2d_same(input, kernel_t.t().unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]), c)
     return x, y
 
-
 def compute_single_sided_diferences(o_x, o_y, input):
     # n,c,h,w
     #input = input.clone()
@@ -89,7 +85,6 @@ def compute_single_sided_diferences(o_x, o_y, input):
     o_y[:, :, -1, :] = input[:, :, -1, :].clone() - input[:, :, -2, :].clone()
     o_x[:, :, :, -1] = input[:, :, :, -1].clone() - input[:, :, :, -2].clone()
     return o_x, o_y
-
 
 def numerical_gradients_2d(input, cuda=False):
     """
@@ -148,7 +143,6 @@ def convTri(input, r, cuda=False):
                       padding=0, groups=c)
     return output
 
-
 def compute_normal(E, cuda=False):
     if torch.sum(torch.isnan(E)) != 0:
         print('nans found here')
@@ -169,7 +163,6 @@ def compute_normal(E, cuda=False):
         ipdb.set_trace()
 
     return O
-
 
 def compute_normal_2(E, cuda=False):
     if torch.sum(torch.isnan(E)) != 0:
@@ -221,7 +214,6 @@ def _sample_gumbel(shape, eps=1e-10):
     """
     U = torch.rand(shape).cuda()
     return - torch.log(eps - torch.log(U + eps))
-
 
 def _gumbel_softmax_sample(logits, tau=1, eps=1e-10):
     """

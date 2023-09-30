@@ -61,7 +61,7 @@ __C.REDUCE_BORDER_EPOCH = -1
 # Comma Seperated List of class id to relax
 __C.STRICTBORDERCLASS = None
 # Where output results get written
-__C.RESULT_DIR = None
+__C.RESULT_DIR = "logs/final/coarse_ours_1"
 
 __C.OPTIONS = AttrDict()
 __C.OPTIONS.TEST_MODE = False
@@ -114,7 +114,7 @@ __C.DATASET.LANCZOS_SCALES = False
 # Use a center crop of size args.pre_size for mapillary validation
 # Need to use this if you want to dump images
 __C.DATASET.MAPILLARY_CROP_VAL = False
-__C.DATASET.CROP_SIZE = '896'
+__C.DATASET.CROP_SIZE = '512,512'
 
 __C.MODEL = AttrDict()
 __C.MODEL.BN = 'regularnorm'

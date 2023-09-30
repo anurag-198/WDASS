@@ -38,6 +38,7 @@ present, calculate the centroid of the class and record it.
 We would like to thank Peter Kontschieder for the inspiration of this idea.
 """
 
+
 import sys
 import os
 import json
@@ -52,10 +53,8 @@ from tqdm import tqdm
 from config import cfg
 from runx.logx import logx
 
-from os import listdir
-from os.path import isfile, join
-
 pbar = None
+
 
 class Point():
     """
@@ -81,6 +80,7 @@ def calc_tile_locations(tile_size, image_size):
             y_offs = y * tile_size
             locations.append((x_offs, y_offs))
     return locations
+
 
 def class_centroids_image(item, tile_size, num_classes, id2trainid):
     """
@@ -162,25 +162,6 @@ def pooled_class_centroids_all(items, num_classes, id2trainid, tile_size=1024):
     return centroids
 
 
-def unpooled_class_centroids_all(items, num_classes, id2trainid,
-                                 tile_size=1024):
-    """
-    Calculate class centroids for all classes for all images for all tiles.
-    items: list of (image_fn, label_fn)
-    tile size: size of tile
-    returns: dict that contains a list of centroids for each class
-    """
-    centroids = defaultdict(list)
-    global pbar
-    pbar = tqdm(total=len(items), desc='centroid extraction', file=sys.stdout)
-    for image, label in items:
-        new_centroids = class_centroids_image(item=(image, label),
-                                              tile_size=tile_size,
-                                              num_classes=num_classes,
-                                              id2trainid=id2trainid)
-        for class_id in new_centroids:
-            centroids[class_id].extend(new_centroids[class_id])
-    return centroids
 
 def class_centroids_all(items, num_classes, id2trainid, tile_size=1024):
     """
@@ -188,29 +169,7 @@ def class_centroids_all(items, num_classes, id2trainid, tile_size=1024):
     """
     pooled_centroids = pooled_class_centroids_all(items, num_classes,
                                                   id2trainid, tile_size)
-    # pooled_centroids = unpooled_class_centroids_all(items, num_classes,
-    #                                                id2trainid, tile_size)
     return pooled_centroids
-
-
-def random_sampling(alist, num):
-    """
-    Randomly sample num items from the list
-    alist: list of centroids to sample from
-    num: can be larger thansudo du -a /dir/ | sort -n -r | head -n 20 the list and if so, then wrap around
-    return: class uniform samples from the list
-    """
-    sampling = []
-    len_list = len(alist)
-    assert len_list, 'len_list is zero!'
-    indices = np.arange(len_list)
-    np.random.shuffle(indices)
-
-    for i in range(num):
-        item = alist[indices[i % len_list]]
-        sampling.append(item)
-    return sampling
-
 
 def build_centroids(imgs, num_classes, train, cv=None, coarse=False,
                     custom_coarse=False, id2trainid=None):
@@ -270,25 +229,6 @@ def build_centroids(imgs, num_classes, train, cv=None, coarse=False,
         
     return centroids
 
-'''
-def get_imgs() : 
-    sv = "/BS/ZeroLabelSemanticSegmentation/work/project/semantic-segmentation/logs/train_cityscapes_deepv3x71/coarseRed/code/logs/train_cityscapes_deepv3x71/FT-1000-3/"
-    mypath = sv + "imgs" 
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-
-    a=[]
-    
-    for i in range(len(onlyfiles)) :
-        a1 = onlyfiles[i]
-        b1 = a1
-        b1 = b1[:-15] + "gtCoarse_labelIds.png"
-        a1 = sv + "imgs/" +  a1
-        b1 = sv + "nt/" + b1 
-        c = (a1,b1)
-        a.append(c)
-    return a 
-'''
-####### most important segment ##############  /BS/anurag/work/project/semantic-segmentation/logs/train_cityscapes_deepv3x71/shape_syn_psl/code/datasets/uniform.py
 def extend(co, fi) :
     lenco = len(co)
     lenfi = len(fi)
@@ -305,6 +245,7 @@ def modifypt(imgs) :
             sp = sp.replace("gtCoarse", "gtPoint2")
             imgs_[i][1] = sp
     return imgs_
+
 
 def change(imgs) : 
     imgs_ = imgs.copy()
@@ -332,7 +273,7 @@ def get_imgs(sample_size, weak_label, synthia) :
             print("using point labels ")
             co = modifypt(co)
         elif 'label' in weak_label :
-            print("not implemented error---------------")
+            raise NotImplementedError("label not implemented")
         else :
             print("using coarse labels ---")
         print("loaded " + pth + str(sample_size) + ".npy with length", len(co))
@@ -350,17 +291,6 @@ def get_imgs(sample_size, weak_label, synthia) :
         co = fi
     
     return co, fi, co_orig
-
-def modify(imgs, psl, sample_size) : 
-    coarse, fine = sample_size
-    imgs_ = imgs.copy()
-    for i in range(len(imgs_)) : 
-        if ("cityscapes" in imgs_[i][1]) :
-            sp = imgs_[i][1].split("/")
-            name = sp[-3:]
-            fn = "/BS/anurag/work/data/cityscapes/gtFine_trainextra/psl/psl_" +  str(coarse) +  "c_" + str(fine) + "f_shape_" + str(psl) +  "/" + name[0] + "/" + name[1] + "/" + name[2]
-            imgs_[i][1] = fn
-    return imgs_
 
 def build_epoch(imgs, centroids, num_classes, train, sample_size, psl, weak_label, synthia):
     """
@@ -384,27 +314,31 @@ def build_epoch(imgs, centroids, num_classes, train, sample_size, psl, weak_labe
     num_epoch = int(len(imgs))
 
     logx.msg('Class Uniform items per Epoch: {}'.format(str(num_epoch)))
-    num_per_class = int((num_epoch * class_uniform_pct) / num_classes)
-    class_uniform_count = num_per_class * num_classes
-    #num_rand = num_epoch - class_uniform_count
-    if sample_size is not None :
-        num_rand = sample_size
-    else :
-        num_rand = num_epoch
-    # create random crops
+
+    # TODELETE
+    # num_per_class = int((num_epoch * class_uniform_pct) / num_classes)
+    # class_uniform_count = num_per_class * num_classes
+    # #num_rand = num_epoch - class_uniform_count
+    # if sample_size is not None :
+    #     num_rand = sample_size
+    # else :
+    #     num_rand = num_epoch
+    # # create random crops
     
-    #imgs_uniform = random_sampling(imgs, num_rand)
     imgs_uniform, fine_sample, coarse_sample = get_imgs(sample_size, weak_label, synthia)
-    
-    print("after ............................")
-    if psl is not None:
-        logx.msg("modifying the target path " +  str(psl))
-        imgs_uniform = modify(imgs_uniform, psl, sample_size)
+
+
+    # TODELETE
+    # print("after ............................")
+    # if psl is not None:
+    #     logx.msg("modifying the target path " +  str(psl))
+    #     imgs_uniform = modify(imgs_uniform, psl, sample_size)
 
     logx.msg('Total images (final) : {}'.format(str(len(imgs_uniform))))
     
     ##saving files used ###
     #np.save('logs/train_cityscapes_deepv3x71/FT-1000-3/files.npy', imgs_uniform, allow_pickle=True)
+    
     if train :
         return imgs_uniform, fine_sample, coarse_sample
     else : 

@@ -65,6 +65,7 @@ def colorize_mask(mask):
     new_mask = Image.fromarray(mask.astype(np.uint8)).convert('P')
     new_mask.putpalette(palette)
     return new_mask
+
 class BaseLoader(data.Dataset):
     def __init__(self, quality, mode, joint_transform_list, img_transform,
                  label_transform):
@@ -89,7 +90,6 @@ class BaseLoader(data.Dataset):
         self.syn_len = 0
         self.weak_label = None
         self.synthia = False
-        print("you are in correct place")
 
     def build_epoch(self):
         """

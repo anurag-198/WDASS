@@ -116,7 +116,6 @@ def get_optimizer(args, net):
 
     return optimizer, scheduler
 
-
 def load_weights(net, optimizer, snapshot_file, restore_optimizer_bool=False):
     """
     Load weights from snapshot file
@@ -124,7 +123,6 @@ def load_weights(net, optimizer, snapshot_file, restore_optimizer_bool=False):
     logx.msg("Loading weights from model {}".format(snapshot_file))
     net, optimizer = restore_snapshot(net, optimizer, snapshot_file, restore_optimizer_bool)
     return net, optimizer
-
 
 def restore_snapshot(net, optimizer, snapshot, restore_optimizer_bool):
     """
@@ -162,8 +160,7 @@ def restore_net(net, ema_net, checkpoint):
         forgiving_state_restore(net, checkpoint)
     if 'state_dict_ema' in checkpoint :
         forgiving_state_restore(ema_net, checkpoint['state_dict_ema'])
-    
-    
+
 def forgiving_state_restore(net, loaded_dict):
     """
     Handle partial loading when some tensors don't match up in size.

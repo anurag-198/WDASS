@@ -30,15 +30,18 @@ POSSIBILITY OF SUCH DAMAGE.
 from __future__ import absolute_import
 from __future__ import division
 
-import argparse
+
+from command_line.arguments import parser
+from utils.system_utilities import find_free_port, check_termination, AutoResume, zipfolder
+from utils.ema_classes import ema_cls, ema_cls_2
+
+
 import os
-from pyexpat import features
 import sys
 import time
 import torch
-import zipfile
 
-from PIL import Image
+
 from loss.contrast_loss_intra import ContrastCELoss_intra
 
 #from apex import amp
@@ -46,13 +49,13 @@ from runx.logx import logx
 from config import assert_and_infer_cfg, update_epoch, cfg
 from utils.misc import AverageMeter, prep_experiment, eval_metrics
 from utils.misc import ImageDumper
-from utils.trnval_utils import eval_minibatch, validate_topn, eval_minibatch_psl, eval_minibatch_slide
+from utils.trnval_utils import eval_minibatch, eval_minibatch_slide
 from loss.utils import get_loss
-from loss.optimizer import get_optimizer, restore_opt, restore_net
+from loss.optimizer import restore_opt, restore_net
 
 
-from utils.init_func import group_weight_2, group_weight
-from utils.lr_policy import WarmUpPolyLR, PolyLR
+from utils.init_func import group_weight_2
+from utils.lr_policy import WarmUpPolyLR
 from utils.prototypes import prototypes
 
 from transforms.dacs_transforms import *
@@ -65,328 +68,27 @@ import random
 import datasets
 import network
 import numpy as np
-
 import sys
-import json
-
-import cv2
-
-from timm.models.layers import DropPath
-from torch.nn.modules.dropout import _DropoutNd
-
 from pathlib import Path
 from loss.contrast_loss import ContrastCELoss
 from loss.image_label import ImageLevelLoss
 
 # Import autoresume module
-sys.path.append(os.environ.get('SUBMIT_SCRIPTS', '.'))
-AutoResume = None
-try:
-    from userlib.auto_resume import AutoResume
-except ImportError:
-    print(AutoResume)
+# sys.path.append(os.environ.get('SUBMIT_SCRIPTS', '.'))
+# AutoResume = None
+# try:
+#     from userlib.auto_resume import AutoResume
+# except ImportError:
+#     print(AutoResume)
 
-
-# Argument Parser
-parser = argparse.ArgumentParser(description='Semantic Segmentation')
-parser.add_argument('--lr', type=float, default=0.00025)
-parser.add_argument('--arch', type=str, default='deepv3.DeepWV3Plus',
-                    help='Network architecture. We have DeepSRNX50V3PlusD (backbone: ResNeXt50) \
-                    and deepWV3Plus (backbone: WideResNet38).')
-parser.add_argument('--dataset', type=str, default='cityscapes',
-                    help='cityscapes, mapillary, camvid, kitti')
-
-parser.add_argument('--num_workers', type=int, default=4,
-                    help='cpu worker threads per dataloader instance')
-parser.add_argument('--do_flip', action='store_true', default=False)
-parser.add_argument('--edgeLoss', action='store_true', default=True,
-                    help='edge weights')
-parser.add_argument('--cv', type=int, default=0,
-                    help=('Cross-validation split id to use. Default # of splits set'
-                          ' to 3 in config'))
-parser.add_argument('--full_crop_training', action='store_true', default=False,
-                    help='Full Crop Training')
-parser.add_argument('--pre_size', type=int, default=None,
-                    help=('resize long edge of images to this before'
-                          ' augmentation'))
-parser.add_argument('--log_msinf_to_tb', action='store_true', default=False,
-                    help='Log multi-scale Inference to Tensorboard')
-
-parser.add_argument('--img_wt_loss', action='store_true', default=False,
-                    help='per-image class-weighted loss')
-
-parser.add_argument('--rescale', type=float, default=1.0,
-                    help='Warm Restarts new lr ratio compared to original lr')
-parser.add_argument('--repoly', type=float, default=1.5,
-                    help='Warm Restart new poly exp')
-
-parser.add_argument('--global_rank', default=0, type=int,
-                    help='parameter used by apex library')
-
-parser.add_argument('--optimizer', type=str, default='sgd', help='optimizer')
-parser.add_argument('--amsgrad', action='store_true', help='amsgrad for adam')
-
-parser.add_argument('--test_mode', action='store_true', default=False,
-                    help=('Minimum testing to verify nothing failed, '
-                          'Runs code for 1 epoch of train and val'))
-
-parser.add_argument('--trunk', type=str, default='resnet101',
-                    help='trunk model, can be: resnet101 (default), resnet50')
-parser.add_argument('--max_epoch', type=int, default=180)
-parser.add_argument('--max_cu_epoch', type=int, default=150,
-                    help='Class Uniform Max Epochs')
-parser.add_argument('--start_epoch', type=int, default=0)
-parser.add_argument('--color_aug', type=float,
-                    default=0.25, help='level of color augmentation')
-parser.add_argument('--gblur', action='store_true', default=False,
-                    help='Use Guassian Blur Augmentation')
-parser.add_argument('--bblur', action='store_true', default=False,
-                    help='Use Bilateral Blur Augmentation')
-parser.add_argument('--brt_aug', action='store_true', default=False,
-                    help='Use brightness augmentation')
-parser.add_argument('--lr_schedule', type=str, default='poly',
-                    help='name of lr schedule: poly')
-parser.add_argument('--poly_exp', type=float, default=1.0,
-                    help='polynomial LR exponent')
-parser.add_argument('--poly_step', type=int, default=110,
-                    help='polynomial epoch step')
-parser.add_argument('--bs_trn', type=int, default=2,
-                    help='Batch size for training per gpu')
-parser.add_argument('--bs_val', type=int, default=2,
-                    help='Batch size for Validation per gpu')
-parser.add_argument('--crop_size', type=str, default='747',
-                    help=('training crop size: either scalar or h,w'))
-parser.add_argument('--scale_min', type=float, default=0.5,
-                    help='dynamically scale training images down to this size')
-parser.add_argument('--scale_max', type=float, default=2.0,
-                    help='dynamically scale training images up to this size')
-parser.add_argument('--weight_decay', type=float, default=1e-4)
-parser.add_argument('--momentum', type=float, default=0.9)
-parser.add_argument('--snapshot', type=str, default=None)
-parser.add_argument('--resume', type=str, default=None,
-                    help=('continue training from a checkpoint. weights, '
-                          'optimizer, schedule are restored'))
-parser.add_argument('--restore_optimizer', action='store_true', default=False)
-parser.add_argument('--restore_net', action='store_true', default=False)
-parser.add_argument('--exp', type=str, default='default',
-                    help='experiment directory name')
-parser.add_argument('--result_dir', type=str, default='./logs',
-                    help='where to write log output')
-parser.add_argument('--syncbn', action='store_true', default=False,
-                    help='Use Synchronized BN')
-parser.add_argument('--width', type=int, default=2200,
-                    help='same size for all datasets')
-
-parser.add_argument('--multiprocessing_distributed', action='store_true', default=False)
-parser.add_argument('--dist_url', type=str, default="tcp://127.0.0.1:6789")
-parser.add_argument('--dist_backend', type=str, default="nccl")
-parser.add_argument('--world_size', type=int, default=1)
-parser.add_argument('--rank', type=int, default=0)
-parser.add_argument('--init_decoder', default=False, action='store_true',
-                    help='initialize decoder with kaiming normal')
-
-# Multi Scale Inference
-parser.add_argument('--multi_scale_inference', action='store_true',
-                    help='Run multi scale inference')
-
-parser.add_argument('--default_scale', type=float, default=1.0,
-                    help='default scale to run validation')
-
-
-parser.add_argument('--eval', type=str, default=None,
-                    help=('just run evaluation, can be set to val or trn or '
-                          'folder'))
-parser.add_argument('--eval_folder', type=str, default=None,
-                    help='path to frames to evaluate')
-parser.add_argument('--n_scales', type=str, default=None)
-
-parser.add_argument('--sample_size', type=int, default=None,
-                    help='sample size for fine-tuning')
-parser.add_argument('--coarse_sample', type=int, default=None,
-                    help='sample size for coarse')
-parser.add_argument('--fine_sample', type=int, default=None,
-                    help='sample size for fine')
-parser.add_argument('--psl', type=int, default=None,
-                    help='pseudo label iteration')
-parser.add_argument('--backbone', type=str, default=None,
-                    help='backbone')
-parser.add_argument('--decoder', type=str, default=None,
-                    help='decoder')
-parser.add_argument('--max_iter', type=int, default=None,
-                    help='max_itern')
-parser.add_argument('--alpha', type=float, default=0.999,
-                    help='max_itern')
-parser.add_argument('--noEdge', action='store_true', default=False,
-                    help='no edge loss')
-parser.add_argument('--edge_wt', type=float, default=20,
-                    help='max_itern')
-parser.add_argument('--contrast_wt', type=float, default=0.1,
-                    help='max_itern')
-parser.add_argument('--c_inter', type=float, default=0.5,
-                    help='inter domain')
-parser.add_argument('--c_real', type=float, default=0.25,
-                    help='real')
-parser.add_argument('--c_syn', type=float, default=0.25,
-                    help='synthetic')
-parser.add_argument('--use_wl', action='store_true', default=False,
-                    help='max_itern')
-parser.add_argument('--not_ema', action='store_true', default=False,
-                    help='max_itern')
-parser.add_argument('--test', action='store_true', default=False,
-                    help='max_itern')
-parser.add_argument('--bn_buffer', action='store_true', default=False,
-                    help='update bn buffers')
-parser.add_argument('--use_contrast', action='store_true', default=False,
-                    help='update bn buffers')
-parser.add_argument('--pretrain', action='store_true', default=False,
-                    help='update bn buffers')
-parser.add_argument('--weak_label', type=str, default='point',
-                    help='decoder')
-parser.add_argument('--imloss', action='store_true', default=False,
-                    help='use image loss')
-parser.add_argument('--improto', action='store_true', default=False,
-                    help='use image loss')
-parser.add_argument('--synthia', action='store_true', default=False,
-                    help='use image loss')
 
 args = parser.parse_args()
 args.best_record = {'epoch': -1, 'iter': 0, 'val_loss': 1e10, 'acc': 0,
                     'acc_cls': 0, 'mean_iu': 0, 'fwavacc': 0}
-
 args.world_size = 1
 
-# Test Mode run two epochs with a few iterations of training and val 
-def find_free_port():
-    import socket
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # Binding to port 0 will cause the OS to find an available port for us
-    sock.bind(("", 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    # NOTE: there is still a chance the port could be taken by other processes. /ptmp/andas/project/semantic-segmentation/logs/train_deepv3x71/full_synbn/code/train.py
-    return port
-
-def check_termination(epoch):
-    if AutoResume:
-        shouldterminate = AutoResume.termination_requested()
-        if shouldterminate:
-            if args.global_rank == 0:
-                progress = "Progress %d%% (epoch %d of %d)" % (
-                    (epoch * 100 / args.max_iter),
-                    epoch,
-                    args.max_iter
-                )
-                AutoResume.request_resume(
-                    user_dict={"RESUME_FILE": logx.save_ckpt_fn,
-                               "TENSORBOARD_DIR": args.result_dir,
-                               "EPOCH": str(epoch)
-                               }, message=progress)
-                return 1
-            else:
-                return 1
-    return 0
-
 def main_process():
-    return not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % args.ngpus_per_node == 0)
-
-def get_module(module):
-    if isinstance(module, torch.nn.parallel.DistributedDataParallel):
-        return module.module
-    return module
-
-class ema_cls() :
-    def __init__(self, net, args) :
-        super(ema_cls, self).__init__()
-        self.ema_model = net
-        self.alpha = args.alpha
-        self.buffer_keys = None
-        self.init_ema_weights(net)
-
-    def get_ema_model(self):
-        return get_module(self.ema_model)
-
-    def get_model(self, net) :
-        return get_module(net)
-
-    def _init_ema_weights(self, net, bn_buffer):
-        for param in self.get_ema_model().parameters():
-            param.detach_()
-        mp = list(self.get_model(net).parameters())
-        mcp = list(self.get_ema_model().parameters())
-        for i in range(0, len(mp)):
-            if not mcp[i].data.shape:  # scalar tensor
-                mcp[i].data = mp[i].data.clone()
-            else:
-                mcp[i].data[:] = mp[i].data[:].clone()
-        
-        
-    def _update_ema(self, net, itern, not_ema, bn_buffer):
-        #print(self.alpha)
-        alpha_teacher = min(1 - 1 / (itern + 1), self.alpha)
-        for ema_param, param in zip(self.get_ema_model().parameters(),
-                                    self.get_model(net).parameters()):
-  
-            if not param.data.shape:  # scalar tensor
-                if not not_ema :
-                    ema_param.data = \
-                        alpha_teacher * ema_param.data + \
-                        (1 - alpha_teacher) * param.data
-                else :
-                    ema_param.data = param.data
-            else:
-                if not not_ema :
-                    ema_param.data[:] = \
-                        alpha_teacher * ema_param[:].data[:] + \
-                        (1 - alpha_teacher) * param[:].data[:]
-                else : 
-                    ema_param.data[:] = param[:].data[:]
-
-class ema_cls_2() :
-    def __init__(self, net, args) :
-        super(ema_cls_2, self).__init__()
-        self.ema_model = net
-        self.alpha = args.alpha
-        self.buffer_keys = None
-        self._init_ema_weights(net)
-
-    def get_ema_model(self):
-        return get_module(self.ema_model)
-
-    def get_model(self, net) :
-        return get_module(net)
-
-    def _init_ema_weights(self, net, bn_buffer=False):
-        for param in self.get_ema_model().parameters():
-            param.detach_()
-        state_dict_main = self.get_model(net).state_dict()
-        state_dict_ema = self.get_ema_model().state_dict()
-        for (k_main, v_main), (k_ema, v_ema) in zip(state_dict_main.items(), state_dict_ema.items()):
-            assert k_main == k_ema, "state_dict names are different!"
-            assert v_main.shape == v_ema.shape, "state_dict shapes are different!"
-
-
-    def _update_ema(self, net, itern, not_ema, bn_buffer):
-
-        alpha_teacher = min(1 - 1 / (itern + 1), self.alpha)
-        state_dict_main = self.get_model(net).state_dict()
-        state_dict_ema = self.get_ema_model().state_dict()
-        for (k_main, v_main), (k_ema, v_ema) in zip(state_dict_main.items(), state_dict_ema.items()):
-            assert k_main == k_ema, "state_dict names are different!"
-            assert v_main.shape == v_ema.shape, "state_dict shapes are different!"
-            if 'num_batches_tracked' in k_ema or not_ema : 
-                v_ema.copy_(v_main.clone().detach_())
-            else:
-                v_ema.copy_(v_ema * self.alpha + (1. - self.alpha) * v_main.clone().detach_())
-            
-
-def zipfolder(foldername, target_dir):            
-    zipobj = zipfile.ZipFile(foldername + '.zip', 'w', zipfile.ZIP_DEFLATED)
-    rootlen = len(target_dir) + 1
-    for base, dirs, files in os.walk(target_dir):
-        for file in files:
-            fn = os.path.join(base, file)
-            if "logs" not in fn :
-                zipobj.write(fn, fn[rootlen:])
+    return not args.multiprocessing_distributed or (args.multiprocessing_distributed and args.rank % args.ngpus_per_node == 0)       
 
 def main():
     """
@@ -396,8 +98,9 @@ def main():
         AutoResume.init()
 
     prep_experiment(args) 
+    if not os.path.exists(args.result_dir):
+        print(f"Direcotry {args.result_dir} does not exist.")
     assert args.result_dir is not None, 'need to define result_dir arg' 
-    ### fills args.ngpu 
   
 
     if args.dist_url == "env://" and args.world_size == -1:
@@ -411,18 +114,23 @@ def main():
         args.distributed = False
         args.multiprocessing_distributed = False
     
+    # TODO: args.train_gpu is not defined unless ngpu > 1
+    
     if args.multiprocessing_distributed:
         print("mulitprocessing done ")
         args.sync_bn = True
         args.train_gpu = [i for i in range(args.ngpu)]
         port = find_free_port()
+        # generate random integer between 1 and 10
+        ri_1 = random.randint(1, 10)
+        ri_2 = random.randint(1, 10)
+        ri = (ri_1 + ri_2) % 10
+        port = 29510 + ri
         args.dist_url = f"tcp://127.0.0.1:{port}"
         args.world_size = args.ngpus_per_node * args.world_size
         mp.spawn(main_worker, nprocs=args.ngpus_per_node, args=(args.ngpus_per_node, args))
     else : 
         main_worker(args.train_gpu, args.ngpus_per_node, args)
-
-
 
 def main_worker(gpu, ngpus_per_node, argss) :  
     global args
@@ -473,15 +181,21 @@ def main_worker(gpu, ngpus_per_node, argss) :
         logx.msg(msg.format(checkpoint_fn, args.result_dir,
                             args.start_epoch))
     elif args.resume:
-        checkpoint = torch.load(args.resume,
-                                map_location=torch.device('cpu'))
-        #args.arch = checkpoint['arch']
-        #args.start_epoch = int(checkpoint['epoch']) + 1
-        args.start_iter = 0
-        args.restore_net = True
-        args.restore_optimizer = False
-        msg = "Resuming from: checkpoint={}, epoch {}, arch {}"
-        logx.msg(msg.format(args.resume, args.start_epoch, args.arch))
+        if not os.path.isfile(args.resume):
+            msg = "Could not find checkpoint file at {}".format(args.resume)
+            print(msg)
+            logx.msg(msg)
+            args.resume = None
+        else:
+            checkpoint = torch.load(args.resume,
+                                    map_location=torch.device('cpu'))
+            #args.arch = checkpoint['arch']
+            #args.start_epoch = int(checkpoint['epoch']) + 1
+            args.start_iter = 0
+            args.restore_net = True
+            args.restore_optimizer = False
+            msg = "Resuming from: checkpoint={}, epoch {}, arch {}"
+            logx.msg(msg.format(args.resume, args.start_epoch, args.arch))
     elif args.snapshot:
         if 'ASSETS_PATH' in args.snapshot:
             args.snapshot = args.snapshot.replace('ASSETS_PATH', cfg.ASSETS_PATH)
@@ -1041,7 +755,6 @@ def validate(val_loader, net, net_ema, result_dir, criterion, optim, epoch, prot
     # Write out a summary html page and tensorboard image table
     
     dumper.write_summaries(was_best)
-
 
 if __name__ == '__main__':
     main()

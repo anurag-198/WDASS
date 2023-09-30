@@ -8,8 +8,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import sys
-
 class ImageLevelLoss2(nn.Module, ABC):
     def __init__(self, norm = False):
         super(ImageLevelLoss2, self).__init__()

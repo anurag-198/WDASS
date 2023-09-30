@@ -6,12 +6,16 @@ from abc import ABC
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-import sys
 
 class PixelContrastLoss(nn.Module, ABC):
+    '''
+    Pixel Contrastive Loss
+    '''
     def __init__(self, weak_label=None):
+        '''
+            Parameters:
+                weal_label: weak label for contrastive loss
+        '''
         super(PixelContrastLoss, self).__init__()
 
         self.temperature = 0.1
@@ -27,6 +31,13 @@ class PixelContrastLoss(nn.Module, ABC):
             self.coarse = True
 
     def _hard_anchor_sampling(self, X, y_hat, y, y_prob): #feat, labels, pred #f_fin, gts_fin, pred_fin, prob_fin
+        '''
+            Parameters:
+                X: features
+                y_hat: predicted labels
+                y: ground truth labels
+                y_prob: predicted probabilities
+        '''
         batch_size, feat_dim = X.shape[0], X.shape[-1]
         classes = []
         total_classes = 0

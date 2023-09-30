@@ -39,9 +39,11 @@ from torch.utils.data import DataLoader
 
 from config import cfg, update_dataset_cfg, update_dataset_inst
 from runx.logx import logx
-from datasets.randaugment import RandAugment
-
 import torch
+
+# TODELETE: from datasets.randaugment import RandAugment
+
+
 
 
 def setup_loaders(args):
@@ -51,10 +53,22 @@ def setup_loaders(args):
     return:  training data loader, validation data loader loader,  train_set
     """
 
-    # TODO add error checking to make sure class exists
-    logx.msg(f'dataset = {args.dataset}')
+    
+    # convert the name of the dataset to lower case
+    dataset_name = args.dataset.lower()
 
-    mod = importlib.import_module('datasets.{}'.format(args.dataset))
+    # if it starts with city, then it is cityscapes
+    if (dataset_name.startswith('city')):
+        dataset_name = 'cityscapes'
+
+    # The only supported dataset is cityscapes
+    if (dataset_name != 'cityscapes'):
+        logx.msg('Currently only supports Cityscapes')
+        raise NotImplementedError
+
+    
+
+    mod = importlib.import_module('datasets.{}'.format(dataset_name))
     dataset_cls = getattr(mod, 'Loader')
 
     logx.msg(f'ignore_label = {dataset_cls.ignore_label}')
@@ -71,6 +85,7 @@ def setup_loaders(args):
         args.crop_size = [int(x) for x in args.crop_size.split(',')]
     else:
         args.crop_size = int(args.crop_size)
+
     train_joint_transform_list = [
         # TODO FIXME: move these hparams into cfg
         #joint_transforms.ResizeWidth(args.width),
@@ -181,6 +196,9 @@ def setup_loaders(args):
             img_transform=train_input_transform,
             label_transform=target_train_transform, sample_size = (None, args.fine_sample), psl = args.psl, weak_label=None, synthia=args.synthia)
         
+
+        train_sampler_citi = None
+        train_sampler_gta = None
         if args.distributed:
             #from datasets.sampler import DistributedSampler
             train_sampler_citi = torch.utils.data.distributed.DistributedSampler(train_set_citi)

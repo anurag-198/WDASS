@@ -6,9 +6,6 @@ from abc import ABC
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-
-import sys
 
 class PixelContrastLoss(nn.Module, ABC):
     def __init__(self, weak_label=None):
