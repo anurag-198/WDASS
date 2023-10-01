@@ -27,14 +27,58 @@ source cu11/bin/activate
 pip install -r requirements.txt
 ```
 
-### Training:
+### Replicating the results:
 
-For training using the point annotation ```--weak_label point```, first generate the ground truth point annotations using the following command:
+#### Preparing the data:
+The only supported dataset for now is Cityscapes. Download the dataset from [here](https://www.cityscapes-dataset.com/). The dataset directory should have the following structure:
+
+```
+cityscapes/
+├── leftImg8bit_trainextra/
+│   └── leftImg8bit/
+│    └── train/
+│       ├── [subfolder_1]/
+│       │   └── [image_files]
+│       ├── [subfolder_2]/
+│       │   └── [image_files]
+│       └── ...
+├── gtFine_trainextra/
+│   └── gtFine/
+│    └── train/
+│       ├── [subfolder_1]/
+│       │   └── [mask_files]
+│       ├── [subfolder_2]/
+│       │   └── [mask_files]
+│       └── ...
+│   └── psl/
+│    └── train/
+│       ├── [subfolder_1]/
+│       │   └── [mask_files]
+│       ├── [subfolder_2]/
+│       │   └── [mask_files]
+│       └── ...
+├── leftImg8bit_trainvaltest/
+│   └── leftImg8bit/
+│    └── train/
+│    └── test/
+│    └── val/
+│    └── train_extra/
+├── gtFine_trainvaltest/
+│   └── gtFine/
+│    └── train/
+│    └── test/
+│    └── val/
+│    └── train_extra/
+```
+
+
+For using the point annotation ```--weak_label point``` during training, first generate the ground truth point annotations using the following command:
 
 ```bash
 python datasets/utils.py
 ```
 
+#### Training:
 To replicate our experiments and results, you can use the following command:
 
 ```bash
