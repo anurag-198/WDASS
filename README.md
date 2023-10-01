@@ -50,13 +50,6 @@ cityscapes/
 │       ├── [subfolder_2]/
 │       │   └── [mask_files]
 │       └── ...
-│   └── psl/
-│    └── train/
-│       ├── [subfolder_1]/
-│       │   └── [mask_files]
-│       ├── [subfolder_2]/
-│       │   └── [mask_files]
-│       └── ...
 ├── leftImg8bit_trainvaltest/
 │   └── leftImg8bit/
 │    └── train/
