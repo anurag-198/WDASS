@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ### Replicating the results:
 
 #### Preparing the data:
-The only supported dataset for now is Cityscapes. Download the dataset from [here](https://www.cityscapes-dataset.com/). The dataset directory should have the following structure:
+1. The only supported dataset for now is Cityscapes. Download the dataset from [here](https://www.cityscapes-dataset.com/). The dataset directory should have the following structure:
 
 ```
 cityscapes/
@@ -71,8 +71,9 @@ cityscapes/
 │    └── train_extra/
 ```
 
+2. change the ```__C.ASSETS_PATH``` in ```config.py``` to the path of the dataset directory.
 
-For using the point annotation ```--weak_label point``` during training, first generate the ground truth point annotations using the following command:
+3. **(Optional)** For using the point annotation ```--weak_label point``` during training, first generate the ground truth point annotations using the following command:
 
 ```bash
 python datasets/utils.py
