@@ -29,6 +29,12 @@ pip install -r requirements.txt
 
 ### Training:
 
+For training using the point annotation ```--weak_label point```, first generate the ground truth point annotations using the following command:
+
+```bash
+python datasets/utils.py
+```
+
 To replicate our experiments and results, you can use the following command:
 
 ```bash

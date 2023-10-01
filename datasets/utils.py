@@ -60,7 +60,7 @@ def points_data_to_yaml(data_file_path, output_file_path="points_data.yaml"):
         print("Done!")
 
 
-def generate_images_from_yaml(yaml_file_path, output_dir=None):
+def generate_images_from_yaml(yaml_file_path, output_dir="gtPoint2_training"):
     """
         Load points data from yaml file to generate images with points
         Args:
@@ -125,3 +125,6 @@ def make_dataset_folder(folder):
     """
 
     return items
+
+if __name__=="__main__":
+    generate_images_from_yaml("file_2975.yaml", "gtPoint2_training")
