@@ -83,10 +83,13 @@ python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distri
 
 #### Validation:
 You can use the following command:
+
+```bash
 python train.py --dataset cityscapes --eval val --n_scales 0.5,1,2 --arch deepv2.DeepV2R101 --result_dir  logs/coarse --multiprocessing_distributed --snapshot 'location to checkpoint'
+```
 
 #### Trained weights for validation 
-You can download trained weights for coarse, point and image labels from [here]([https://www.cityscapes-dataset.com/](https://github.com/anurag-198/WDASS/releases/tag/v1.0.0))
+You can download trained weights for coarse, point and image labels from [here](https://github.com/anurag-198/WDASS/releases/tag/v1.0.0)
 
 ## Citation
 
