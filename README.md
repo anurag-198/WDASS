@@ -53,13 +53,15 @@ cityscapes/
 ├── leftImg8bit_trainvaltest/
 │   └── leftImg8bit/
 │    └── train/
-│    └── test/
 │    └── val/
 │    └── train_extra/
 ├── gtFine_trainvaltest/
 │   └── gtFine/
 │    └── train/
-│    └── test/
+│    └── val/
+│    └── train_extra/
+├── gtCoarse/
+│    └── train/
 │    └── val/
 │    └── train_extra/
 ```
