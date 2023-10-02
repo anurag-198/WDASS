@@ -4,7 +4,7 @@
 
 This is the official repository accompanying the CVPR paper:
 
-[Anurag Das](https://anurag-198.github.io/), [Yongqin Xian](https://xianyongqin.github.io/), [Dengxin Dai](https://vas.mpi-inf.mpg.de/dengxin/), and [Bernt Schiele](https://scholar.google.com/citations?user=z76PBfYAAAAJ&hl=en). **Weakly-Supervised Domain Adaptive Semantic Segmentation with Prototypical Contrastive Learning**. CVPR.
+[Anurag Das](https://anurag-198.github.io/), [Yongqin Xian](https://xianyongqin.github.io/), [Dengxin Dai](https://vas.mpi-inf.mpg.de/dengxin/), and [Bernt Schiele](https://scholar.google.com/citations?user=z76PBfYAAAAJ&hl=en). **Weakly-Supervised Domain Adaptive Semantic Segmentation with Prototypical Contrastive Learning**. CVPR 2023.
 
 [Paper](https://openaccess.thecvf.com/content/CVPR2023/papers/Das_Weakly-Supervised_Domain_Adaptive_Semantic_Segmentation_With_Prototypical_Contrastive_Learning_CVPR_2023_paper.pdf) | [Video](https://www.youtube.com/watch?v=Arg8p0Zrf9A) | [Supplemental](https://openaccess.thecvf.com/content/CVPR2023/supplemental/Das_Weakly-Supervised_Domain_Adaptive_CVPR_2023_supplemental.pdf)
 
