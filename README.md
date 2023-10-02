@@ -73,12 +73,12 @@ python datasets/utils.py
 ```
 
 #### Training:
-You can use the following command:
-
+1. Train segmentation model on synthetic data (GTA5) to obtain GTA pretrained weights
+2. Use GTA5 pretrained model to start training for adaptation using below -  
 ```bash
-python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label coarse --use_wl --imloss --improto
-python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label point --use_wl --imloss --improto
-python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label image --imloss --improto
+python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label coarse --use_wl --imloss --improto --resume "pretrained gta weights"
+python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label point --use_wl --imloss --improto --resume "pretrained gta weights"
+python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label image --imloss --improto --resume "pretrained gta weights"
 ```
 
 #### Validation:
