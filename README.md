@@ -27,7 +27,7 @@ source cu11/bin/activate
 pip install -r requirements.txt
 ```
 
-### Replicating the results:
+### Experiment setup:
 
 #### Preparing the data:
 1. The only supported dataset for now is Cityscapes. Download the dataset from [here](https://www.cityscapes-dataset.com/). The dataset directory should have the following structure:
@@ -73,11 +73,20 @@ python datasets/utils.py
 ```
 
 #### Training:
-To replicate our experiments and results, you can use the following command:
+You can use the following command:
 
 ```bash
 python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label coarse --use_wl --imloss --improto
+python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label point --use_wl --imloss --improto
+python train.py --dataset cityscapes --result_dir logs/ --multiprocessing_distributed  --use_contrast  --bn_buffer --weak_label image --imloss --improto
 ```
+
+#### Validation:
+You can use the following command:
+python train.py --dataset cityscapes --eval val --n_scales 0.5,1,2 --arch deepv2.DeepV2R101 --result_dir  logs/coarse --multiprocessing_distributed --snapshot 'location to checkpoint'
+
+#### Trained weights for validation 
+You can download trained weights for coarse, point and image labels from [here]([https://www.cityscapes-dataset.com/](https://github.com/anurag-198/WDASS/releases/tag/v1.0.0))
 
 ## Citation
 
