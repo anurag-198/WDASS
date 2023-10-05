@@ -66,7 +66,7 @@ parser.add_argument('--poly_step', type=int, default=110,
                     help='polynomial epoch step')
 parser.add_argument('--bs_trn', type=int, default=4,
                     help='Batch size for training per gpu')
-parser.add_argument('--bs_val', type=int, default=2,
+parser.add_argument('--bs_val', type=int, default=8,
                     help='Batch size for Validation per gpu')
 parser.add_argument('--crop_size', type=str, default='512,512',
                     help=('training crop size: either scalar or h,w'))
@@ -162,3 +162,10 @@ parser.add_argument('--improto', action='store_true', default=False,
                     help='use image loss')
 parser.add_argument('--synthia', action='store_true', default=False,
                     help='use image loss')
+
+parser.add_argument('--dump_assets', action='store_true',
+                    help='Dump interesting assets')
+parser.add_argument('--dump_all_images', action='store_true',
+                    help='Dump all images, not just a subset')
+parser.add_argument('--no_metrics', action='store_true', default=False,
+                    help='prevent calculation of metrics')

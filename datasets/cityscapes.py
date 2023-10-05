@@ -123,6 +123,7 @@ class Loader(BaseLoader):
         ######################################################################
         # Cityscapes-specific stuff:
         ######################################################################
+        self.data_root = cfg.ASSETS_PATH
         self.root = cfg.DATASET.CITYSCAPES_DIR
         self.id_to_trainid = cityscapes_labels.label2trainid
         self.trainid_to_name = cityscapes_labels.trainId2name
@@ -135,62 +136,14 @@ class Loader(BaseLoader):
         img_ext = 'png'
         mask_ext = 'png'
         
-        if mode == 'train' :
-            img_root = path.join(self.root, 'leftImg8bit_trainextra/leftImg8bit')
-            mask_root = path.join(self.root, 'gtFine_trainextra/psl')
-            fc='leftImg8bit_psl_'
         if mode == 'val' : #update this
             img_root = path.join(self.root, 'leftImg8bit_trainvaltest/leftImg8bit')
             mask_root = path.join(self.root, 'gtFine_trainvaltest/gtFine')
             fc='gtFine_labelIds'
-        
-        #if mode == 'val' :
-        #    img_root = path.join(self.root, 'leftImg8bit_trainextra/leftImg8bit')
-        #    mask_root = path.join(self.root, 'gtFine_trainextra/gtFine')
-        #    fc='gtCoarse'
 
-        #mask_root = path.join(self.root, 'gtFine_trainvaltest/gtFine')
-        #img_root = path.join(self.root, 'leftImg8bit_trainvaltest/leftImg8bit')
-
-        #mask_root = path.join(self.root, 'gtCoarse')
-        
-        if mode == 'folder':
-            self.all_imgs = make_dataset_folder(eval_folder)
-        else:
             self.fine_cities = cities_cv_split(self.root, mode, cfg.DATASET.CV)
             self.all_imgs = self.find_cityscapes_images(
-                self.fine_cities, img_root, mask_root, img_ext, mask_ext, fine_coarse = fc)
-
-        logx.msg(f'cn num_classes {self.num_classes}')
-        logx.msg(f'total images length {len(self.all_imgs)}')
-        self.fine_centroids = uniform.build_centroids(self.all_imgs,
-                                                      self.num_classes,
-                                                      self.train,
-                                                      cv=cfg.DATASET.CV,
-                                                      id2trainid=self.id_to_trainid)
-        self.centroids = self.fine_centroids  ### centroids manage the sampling of images [and crops too]
-
-        if cfg.DATASET.COARSE_BOOST_CLASSES and mode == 'train':
-            self.coarse_cities = coarse_cities(self.root)
-            img_root = path.join(self.root,
-                                 'leftImg8bit_trainextra/leftImg8bit')
-            mask_root = path.join(self.root, 'gtCoarse', 'gtCoarse')
-            self.coarse_imgs = self.find_cityscapes_images(
-                self.coarse_cities, img_root, mask_root, img_ext, mask_ext,
-                fine_coarse='gtCoarse')
-
-            if cfg.DATASET.CLASS_UNIFORM_PCT:  
-                
-                custom_coarse = (cfg.DATASET.CUSTOM_COARSE_PROB is not None)
-                self.coarse_centroids = uniform.build_centroids(
-                    self.coarse_imgs, self.num_classes, self.train,
-                    coarse=(not custom_coarse), custom_coarse=custom_coarse,
-                    id2trainid=self.id_to_trainid)
-
-                for cid in cfg.DATASET.COARSE_BOOST_CLASSES:
-                    self.centroids[cid].extend(self.coarse_centroids[cid])
-            else:
-                self.all_imgs.extend(self.coarse_imgs)
+                    self.fine_cities, img_root, mask_root, img_ext, mask_ext, fine_coarse = fc)
 
         self.build_epoch()
 

@@ -254,11 +254,6 @@ class BaseLoader(data.Dataset):
         
         drop_out_mask = None
         # This code is specific to cityscapes
-        if(cfg.DATASET.CITYSCAPES_CUSTOMCOARSE in mask_path):
-
-            gtCoarse_mask_path = mask_path.replace(cfg.DATASET.CITYSCAPES_CUSTOMCOARSE, os.path.join(cfg.DATASET.CITYSCAPES_DIR, 'gtCoarse/gtCoarse') )
-            gtCoarse_mask_path = gtCoarse_mask_path.replace('leftImg8bit','gtCoarse_labelIds')          
-            gtCoarse=np.array(PIL.Image.open(gtCoarse_mask_path))
 
         img_name = os.path.splitext(os.path.basename(img_path))[0]
         
@@ -275,10 +270,7 @@ class BaseLoader(data.Dataset):
             flag_wl = 'coarse' in self.weak_label or 'image' in self.weak_label 
         if self.train and self.weak_label is not None and flag_wl and 'cityscapes' in mask_path : ### point already is in 1024,512
             mask = mask.resize((1024, 512), resample=PIL.Image.NEAREST)
-
-        #if not self.train : ### later validate in full size mask
-        #    mask = mask.resize((1024, 512), resample=PIL.Image.NEAREST)
-        
+      
         mask = np.array(mask)
         
         if (mask_out):
@@ -287,10 +279,6 @@ class BaseLoader(data.Dataset):
         mask = mask.copy()
         for k, v in self.id_to_trainid.items():  ## this is for both GTA and Cityscaprs
             binary_mask = (mask == k) #+ (gtCoarse == k)
-            if ('refinement' in mask_path) and cfg.DROPOUT_COARSE_BOOST_CLASSES != None and v in cfg.DROPOUT_COARSE_BOOST_CLASSES and binary_mask.sum() > 0 and 'vidseq' not in mask_path:
-                binary_mask += (gtCoarse == k)
-                binary_mask[binary_mask >= 1] = 1
-                mask[binary_mask] = gtCoarse[binary_mask]
             mask[binary_mask] = v
 
         mask1 = mask < 0
@@ -331,6 +319,10 @@ class BaseLoader(data.Dataset):
             'refinement' in mask_path
 
         
+        if self.train:
+            img_path = self.data_root + img_path
+            mask_path = self.data_root + mask_path
+
         if 'SYNTHIA' not in img_path :
             img, mask, coarse, img_name = self.read_images(img_path, mask_path, dacs,
                                                 mask_out=mask_out)

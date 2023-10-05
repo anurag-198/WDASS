@@ -49,7 +49,7 @@ cfg = __C
 __C.GLOBAL_RANK = 0
 __C.EPOCH = 0
 # Absolute path to a location to keep some large files, not in this dir.
-__C.ASSETS_PATH = '/BS/ZeroLabelSemanticSegmentation/work/data'
+__C.ASSETS_PATH = 'data'
 
 # Use class weighted loss per batch to increase loss for low pixel count classes per batch
 __C.BATCH_WEIGHTING = False
@@ -77,6 +77,9 @@ __C.DATASET = AttrDict()
 #Cityscapes Dir Location
 __C.DATASET.CITYSCAPES_DIR = \
   os.path.join(__C.ASSETS_PATH, 'cityscapes')
+#gta5 Dir Location
+__C.DATASET.GTA5_DIR = \
+  os.path.join(__C.ASSETS_PATH, 'gta5')
 __C.DATASET.CITYSCAPES_CUSTOMCOARSE = \
   os.path.join(__C.ASSETS_PATH, 'cityscapes/autolabelled')
 __C.DATASET.CENTROID_ROOT = \
