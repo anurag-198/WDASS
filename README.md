@@ -30,40 +30,43 @@ pip install -r requirements.txt
 ### Experiment setup:
 
 #### Preparing the data:
-1. The only supported dataset for now is Cityscapes. Download the dataset from [here](https://www.cityscapes-dataset.com/). The dataset directory should have the following structure:
+1. The dataset supported are Cityscapes, GTA5 and Synthia. Download the Cityscapes dataset from [here](https://www.cityscapes-dataset.com/). The dataset directory should have the following structure:
 
 ```
-cityscapes/
-├── leftImg8bit_trainextra/
-│   └── leftImg8bit/
-│    └── train/
-│       ├── [subfolder_1]/
-│       │   └── [image_files]
-│       ├── [subfolder_2]/
-│       │   └── [image_files]
-│       └── ...
-├── gtFine_trainextra/
-│   └── gtFine/
-│    └── train/
-│       ├── [subfolder_1]/
-│       │   └── [mask_files]
-│       ├── [subfolder_2]/
-│       │   └── [mask_files]
-│       └── ...
-├── leftImg8bit_trainvaltest/
-│   └── leftImg8bit/
-│    └── train/
-│    └── val/
-│    └── train_extra/
-├── gtFine_trainvaltest/
-│   └── gtFine/
-│    └── train/
-│    └── val/
-│    └── train_extra/
-├── gtCoarse/
-│    └── train/
-│    └── val/
-│    └── train_extra/
+data
+ SYNTHIA/
+ GTA5/
+ cityscapes/
+ ├── leftImg8bit_trainextra/
+ │   └── leftImg8bit/
+ │    └── train/
+ │       ├── [subfolder_1]/
+ │       │   └── [image_files]
+ │       ├── [subfolder_2]/
+ │       │   └── [image_files]
+ │       └── ...
+ ├── gtFine_trainextra/
+ │   └── gtFine/
+ │    └── train/
+ │       ├── [subfolder_1]/
+ │       │   └── [mask_files]
+ │       ├── [subfolder_2]/
+ │       │   └── [mask_files]
+ │       └── ...
+ ├── leftImg8bit_trainvaltest/
+ │   └── leftImg8bit/
+ │    └── train/
+ │    └── val/
+ │    └── train_extra/
+ ├── gtFine_trainvaltest/
+ │   └── gtFine/
+ │    └── train/
+ │    └── val/
+ │    └── train_extra/
+ ├── gtCoarse/
+ │    └── train/
+ │    └── val/
+ │    └── train_extra/
 ```
 
 2. change the ```__C.ASSETS_PATH``` in ```config.py``` to the path of the dataset directory.
